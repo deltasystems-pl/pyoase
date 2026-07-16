@@ -1,9 +1,11 @@
-# Online verification checklist — FM-Master powered on
+# Online verification log — FM-Master EGC Cloud
 
-Status of the items that were blocked while the test device was unplugged.
-**Verified live on 2026-07-16** against an FM-Master EGC Cloud (`FmMasterWLanEgcCloudEsp`).
+**All items verified live on 2026-07-16** against a real FM-Master EGC Cloud
+(`FmMasterWLanEgcCloudEsp`). This started as a to-do list of things blocked while the test device was
+unplugged; it is now the record of what was proven. P0–P2 all pass; P3 (pump/RGB/show control +
+diagnostics) is shipped. Remaining open items are noted at the end and are all optional.
 
-Setup for testing:
+Setup to re-verify:
 ```bash
 export OASE_EMAIL=... OASE_PASSWORD=...
 cd pyoase && PYTHONPATH=src python -m pyoase inventory     # confirm gateway isOnline=true first
@@ -62,31 +64,26 @@ cd pyoase && PYTHONPATH=src python -m pyoase inventory     # confirm gateway isO
     `"Unable to parse packet as ONet packet."` (`OaseResponseError`). ⚠️ A *well-framed* packet with
     a bogus socket index returns **`200` + `01`** — the device does not validate the index (see P0-3).
 
-## P3 — future reverse-engineering (enables more features)
+## P3 — attached-device control & extras (mostly DONE)
 
-13. **Attached-device (pump / LED) CONTROL.** ⬜ **The main remaining feature gap** — the user wants
-    the pump switchable from HA (the app shows "Expert 22000" as a switch). Much better understood now:
-    - **Socket ≠ device.** The outlet is only mains power; the pump also has its own EGC on/off
-      (`dmxPumpState.deviceOn`). Disabled pump ⇒ the socket switch appears to do nothing. v1 now
-      exposes `deviceOn` as a read-only `binary_sensor` so this is at least visible.
-    - The **reply opcode rule is proven**: reply = request with the low byte set to `0xFF`
-      (`0xC500`→`0xC5FF`, `0x1000`→`0x10FF`, `0x4000`→`0x40FF`, …). The berkinet note about
-      "EGC `0x7000/0x70FF`, RDM `0x7100/0x71FF`" therefore describes **request/reply pairs**, not
-      two separate opcodes ⇒ the pump/LED *request* opcodes are plausibly `0x7000` / `0x7100`.
-    - **RDM PID `0x1010` tracks pump on/off** (`2`→`255` exactly as `deviceOn` false→true).
-      `0x8039` = pump level (93). See the RDM table in `REVERSE_ENGINEERING.md`.
-    - **Live-scene IDs 0 and 5 exist** besides the outlets' 4 — SceneId 0 is `sceneType=1, len=2,
-      data=[25, 93]` and that `93` matches the pump level. A promising but **unconfirmed** lead.
-    - **Write path still unproven. Do NOT guess-write to a pump** — capture the app first.
-    - Best next step: HTTP Toolkit on the phone, toggle "Expert 22000" in the app, and diff the
-      `SendONetPacket` body against SceneId 0 / PID `0x1010` / opcode `0x7000`.
-14. **`rdmData` decoding.** 🟡 Substantially mapped, see "RDM parameter IDs" in
-    `REVERSE_ENGINEERING.md`. Pump PID `0x0050` (SUPPORTED_PARAMETERS) enumerates its capabilities.
-15. **`DeviceStateHistory`.** ⬜ Not modelled.
-16. **`ActiveDevices` / `incrementStates`.** ✅ **`incrementStates` turned out to be a goldmine** and
-    is now used: it caches verbatim O-Net request/reply pairs per subsystem, giving both the gateway
-    identity and the device table for free. See `REVERSE_ENGINEERING.md`.
-    `PUT /Gateway/{id}/ActiveDevices` still unused.
+13. **Pump CONTROL.** ✅ **DONE — RDM over O-Net `0x7100`.** Not the scene channel. UID =
+    `0x4F41 ‖ deviceNumber`, source `0000:00000000`; PID `0x1010` on/off (`00`/`FF`), `0x8039` power
+    (`floor(pct*255/100)`). Shipped as `switch` + `number`. `dmxPumpState` does NOT reflect RDM writes
+    → coordinator reads live RDM each poll. See `REVERSE_ENGINEERING.md` §4c. (The earlier "SceneId 0"
+    lead was a red herring — scene 0 is a read-only status view.)
+13b. **RGB CONTROL.** ✅ **DONE — `SET_LIVE_SCENE` scene 5** (same channel as sockets, NOT RDM), solved
+    from an app HTTP capture. 9-byte per-channel record `[R][G][B][bright][effect][period u16BE][0][on]`;
+    read via RDM PID `0x8000`. Shipped as `light` ×3 (colour/brightness/10 effects) + `number` speed.
+13c. **Pump SHOWS.** ✅ **DONE — O-Net `0x5000`** payload `00×4 <enable> <mode 1-12>`. Shipped as
+    `select`. Read from `dmxPumpState.fcMode`/`fcStatus` (these DO update in the inventory).
+14. **`rdmData` decoding.** ✅ Mapped; diagnostics shipped (**operating hours** `0x800D`/`0x0400`,
+    **firmware** `0x00C0`). RGB `0x8000` fully decoded. See "RDM parameter IDs" in `REVERSE_ENGINEERING.md`.
+15. **`DeviceStateHistory`.** ⬜ Still not modelled (optional).
+16. **`incrementStates`.** ✅ Used — caches verbatim O-Net request/reply pairs per subsystem, giving
+    the gateway identity + device product names for free. `PUT /Gateway/{id}/ActiveDevices` still unused.
+
+**Only genuinely open items:** water-temperature sensor (`SENSOR_VALUE 0x0201`, if present),
+`DeviceStateHistory`, and the non-Pokaz RGB "scene/animation" effect ids.
 
 ## Endpoints that do NOT exist (404 — don't retry)
 `GET /Gateway/{id}` and `GET /Gateway/{id}/Errors` both return `404`. Gateway data comes solely

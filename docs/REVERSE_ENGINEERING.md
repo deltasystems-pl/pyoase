@@ -178,8 +178,9 @@ Confirmed for every pair the cloud caches in `incrementStates` (§4a) *and* obse
 Implemented as `onet.reply_type()`.
 
 This retroactively explains the berkinet note "EGC `0x7000/0x70FF`, RDM `0x7100/0x71FF`": those are
-**request/reply pairs**, not two opcodes — so the pump/LED *request* opcodes are plausibly `0x7000`
-and `0x7100` (still unverified; do not guess-write to a pump).
+**request/reply pairs**, not two opcodes. Both are now **verified live** — `0x7000` = EGC discovery,
+`0x7100` = RDM transport (§4c). (RGB *control*, however, turned out to use `SET_LIVE_SCENE` scene 5,
+not RDM — see §4c.)
 
 **Transaction number:** the device **ignores** the request's txn and always answers `txn = 0x2b (43)`.
 Sending `txn=0` for everything is fine; five back-to-back commands were all accepted.
@@ -425,20 +426,20 @@ Rules for anyone probing writes:
   no change does **not** mean nothing happened — check the **sockets** and every attached device.
 - Scene 0 write attempts: `sceneType=0` → reply `00` (**rejected**); `sceneType=1` → reply `01` but
   the pump did not change. **SceneId 0 is a read-only status view.**
-- ⇒ Pump/LED control is **not** reachable via `SET_LIVE_SCENE`. It needs the EGC/RDM opcode family
-  (`0x7000`/`0x7100`), which is still unknown. **Capture the app before probing further.**
+- ⇒ **Pump** control is **not** reachable via `SET_LIVE_SCENE` — it is RDM (`0x7100`, §4c). But note
+  the resolution below: **RGB/LED** control *does* use `SET_LIVE_SCENE`, on **scene 5**.
 
 ### Live-scene ID scan (read-only, `GET_LIVE_SCENE` with SceneId 0..12)
 
 | SceneId | sceneType | len | data | meaning |
 |---|---|---|---|---|
-| **0** | 1 | 2 | `19 5d` = `[25, 93]` — the `93` matches the pump level | **unidentified; a pump lead** |
-| 4 | 101 | 5 | `ff ff ff ff 50` | the FM-Master outlets (what we use) |
-| **5** | 71 | 9 | all zero | unidentified |
+| **0** | 1 | 2 | `19 5d` = `[25, 93]` — the `93` matches the pump level | **read-only pump status view** (not writable) |
+| 4 | 101 | 5 | `ff ff ff ff 50` | the FM-Master outlets |
+| **5** | 71 | 9 | all zero at rest | **the RGB/LED channel** — writes go here (§4c) |
 | 1,2,3,6-12 | 0 | 0 | — | empty |
 
-So SceneId 4 is not the only scene, but SceneId 0 is **read-only** — pump/LED control does **not**
-go through `SET_LIVE_SCENE`. It goes through RDM (§4c).
+Resolution: **pump control = RDM** (scene 0 is read-only), **RGB control = `SET_LIVE_SCENE` scene 5**.
+Both confirmed live — see §4c.
 
 ---
 
