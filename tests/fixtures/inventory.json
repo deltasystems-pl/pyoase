@@ -1,0 +1,59 @@
+{
+  "user": {
+    "notificationPreference": null,
+    "cultureInfo": "de-DE",
+    "givenName": "Test",
+    "surname": "User",
+    "photoUri": null
+  },
+  "gateways": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "serialNumber": "500000000000",
+      "articleNumber": 70788,
+      "gatewayType": "FmMasterWLanEgcCloudEsp",
+      "isOnline": true,
+      "onlineState": { "isOnline": true, "eventTime": "2026-07-15T21:12:48.315385+00:00" },
+      "createdAt": "2026-06-09T13:04:07.4559946+00:00",
+      "socketsState": {
+        "value": { "socket1": true, "socket2": false, "socket3": true, "socketDimmer": true, "dimmerValue": 84 },
+        "timestamp": "2026-07-15T21:11:34+00:00"
+      },
+      "activeDevices": {
+        "timestamp": "2026-07-15T17:25:31.0032014+00:00",
+        "incrementValue": 2,
+        "devices": ["00000000-0000-4000-8000-000000000001|111111111", "00000000-0000-4000-8000-000000000001|222222222"]
+      },
+      "incrementStates": [],
+      "telemetryStates": {},
+      "customAttributesJson": null,
+      "devices": [
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000010",
+          "deviceNumber": 111111111,
+          "articleNumber": 40000,
+          "deviceType": "GardenPump",
+          "connectionState": { "isConnected": true, "timestamp": "2026-07-15T21:11:34+00:00" },
+          "dmxPumpState": {
+            "value": { "fcStatus": "DfcOff", "fcMode": 5, "dimmerValue": 93, "deviceOn": true },
+            "timestamp": "2026-07-15T21:11:34+00:00"
+          },
+          "rdmData": { "0x0080": { "value": "AAA=", "timestamp": "2026-07-15T21:11:34+00:00" } },
+          "isActive": true,
+          "customAttributesJson": null
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000020",
+          "deviceNumber": 222222222,
+          "articleNumber": 40001,
+          "deviceType": "GardenLed",
+          "connectionState": { "isConnected": true, "timestamp": "2026-07-15T21:11:34+00:00" },
+          "dmxPumpState": null,
+          "rdmData": { "0x0080": { "value": "AAA=", "timestamp": "2026-07-15T21:11:34+00:00" } },
+          "isActive": true,
+          "customAttributesJson": null
+        }
+      ]
+    }
+  ]
+}
