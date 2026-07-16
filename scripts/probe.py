@@ -99,7 +99,7 @@ def main() -> None:
         raise SystemExit("No token. Capture one from the app (docs/CAPTURE.md) and set OASE_TOKEN.")
 
     inv = get_inventory(args.token)
-    gws = print_gateways(inv)
+    print_gateways(inv)
 
     if not args.gateway:
         print("\n(read-only) pass --gateway <serial> with --socket/--on/--off or --dimmer to control.")

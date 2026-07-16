@@ -74,7 +74,8 @@ def login(email: str, password: str) -> dict:
         "state": state, "nonce": nonce, "response_mode": "query",
     })
     html = follow.open(f"{B2C}/oauth2/v2.0/authorize?{q}", timeout=30).read().decode("utf-8", "replace")
-    m = re.search(r'var SETTINGS\s*=\s*(\{.*?\});', html, re.DOTALL) or re.search(r'"csrf"\s*:\s*"([^"]+)"', html)
+    m = re.search(r'var SETTINGS\s*=\s*(\{.*?\});', html, re.DOTALL)
+    m = m or re.search(r'"csrf"\s*:\s*"([^"]+)"', html)
     if not m:
         raise SystemExit("could not find B2C SETTINGS on the authorize page (login page shape changed?)")
     settings = json.loads(m.group(1))
@@ -197,7 +198,10 @@ def main() -> None:
     if args.set_socket:
         idx = {1: onet.Socket.SOCKET_1, 2: onet.Socket.SOCKET_2, 3: onet.Socket.SOCKET_3}[args.set_socket]
         packet = onet.set_socket_packet(idx, onet.ON if args.on else onet.OFF)
-        print(f"3) SendONetPacket SET socket {args.set_socket} -> {'ON' if args.on else 'OFF'} (serial {serial})")
+        print(
+            f"3) SendONetPacket SET socket {args.set_socket} -> "
+            f"{'ON' if args.on else 'OFF'} (serial {serial})"
+        )
     else:
         packet = onet.get_scene_packet()
         print(f"3) SendONetPacket GET_LIVE_SCENE (read-only tunnel test, serial {serial})")
@@ -206,7 +210,10 @@ def main() -> None:
     print(f"   reply  : {reply.hex() or '(empty)'}")
     if reply:
         decoded = onet.parse_packet(reply)
-        print(f"   -> gateway replied packetType=0x{decoded.packet_type:04x}, {len(decoded.payload)} payload bytes")
+        print(
+            f"   -> gateway replied packetType=0x{decoded.packet_type:04x}, "
+            f"{len(decoded.payload)} payload bytes"
+        )
         if decoded.packet_type == onet.PacketType.GET_LIVE_SCENE:
             try:
                 lsr = onet.parse_live_scene_reply(decoded.payload)
