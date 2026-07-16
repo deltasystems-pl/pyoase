@@ -1,0 +1,12 @@
+pyoase
+Copyright (c) 2026 OASE Home Assistant contributors
+
+The O-Net packet codec in `src/pyoase/onet.py` is a clean-room re-implementation of
+the wire protocol used by the MIT-licensed ioBroker.oasecontrol adapter
+(https://github.com/mr-suw/ioBroker.oasecontrol, Copyright (c) mrsuw), which was used
+as the protocol reference. No source code was copied; only the wire format (packet
+framing, opcodes, and the FM-Master socket scene payloads) was reproduced from the
+observable protocol behavior.
+
+This project is not affiliated with, endorsed by, or supported by OASE GmbH.
+"OASE", "InScenio", and "Easy Garden Control" are trademarks of their respective owners.

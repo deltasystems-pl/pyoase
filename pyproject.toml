@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyoase"
+version = "0.1.0"
+description = "Async client and O-Net protocol codec for OASE InScenio FM-Master (EGC / OASE Control) devices"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "OASE Home Assistant contributors" }]
+keywords = ["oase", "inscenio", "fm-master", "egc", "home-assistant", "pond", "garden"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Home Automation",
+]
+dependencies = ["aiohttp>=3.9"]
+
+[project.urls]
+Homepage = "https://github.com/deltasystems-pl/pyoase"
+Issues = "https://github.com/deltasystems-pl/pyoase/issues"
+
+[project.scripts]
+pyoase = "pyoase.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyoase"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
