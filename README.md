@@ -6,7 +6,7 @@ Control / "OASE Control") smart garden & pond power controllers.
 It talks to the **OASE cloud** (Azure AD B2C + REST) using just your OASE account email and
 password, and controls the device by relaying its native **O-Net** protocol packets through the
 cloud's `SendONetPacket` endpoint. This library is the engine behind the
-[OASE Home Assistant integration](../ha-oase).
+[OASE Home Assistant integration](https://github.com/deltasystems-pl/ha-oase).
 
 > Not affiliated with OASE GmbH. Use at your own risk.
 
@@ -50,7 +50,7 @@ python -m pyoase set --gateway <gateway-id> --dimmer 128
 
 - **Auth** — the OASE B2C tenant only exposes the interactive `B2C_1A_SignUp_SignIn` policy (no
   password grant), so `OaseAuth` scripts the browser login flow headlessly (authorize → SelfAsserted
-  → confirmed → token, PKCE S256) and caches the refresh token. See [docs/REVERSE_ENGINEERING.md](docs/REVERSE_ENGINEERING.md).
+  → confirmed → token, PKCE S256) and caches the refresh token. See [docs/REVERSE_ENGINEERING.md](https://github.com/deltasystems-pl/pyoase/blob/main/docs/REVERSE_ENGINEERING.md).
 - **Reads** — `GET /User/Inventory` returns fully structured state (`SocketsState`, `PumpState`), no
   packet parsing required.
 - **Writes** — `POST /Gateway/{id}/SendONetPacket` relays a raw O-Net packet to the gateway. The
