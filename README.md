@@ -34,6 +34,12 @@ async def main():
         await client.async_set_socket(gw.id, onet.Socket.SOCKET_1, on=True)
         await client.async_set_dimmer_value(gw.id, 128)
 
+        # attached EGC devices (pumps, RGB controllers)
+        pump = 1000000001  # device.device_number
+        await client.async_set_device_on(gw.id, pump, on=True)   # RDM
+        await client.async_set_pump_power(gw.id, pump, 128)      # RDM
+        await client.async_set_pump_show(gw.id, 5)               # flow-control "show"
+
 asyncio.run(main())
 ```
 
@@ -53,9 +59,15 @@ python -m pyoase set --gateway <gateway-id> --dimmer 128
   → confirmed → token, PKCE S256) and caches the refresh token. See [docs/REVERSE_ENGINEERING.md](https://github.com/deltasystems-pl/pyoase/blob/main/docs/REVERSE_ENGINEERING.md).
 - **Reads** — `GET /User/Inventory` returns fully structured state (`SocketsState`, `PumpState`), no
   packet parsing required.
-- **Writes** — `POST /Gateway/{id}/SendONetPacket` relays a raw O-Net packet to the gateway. The
-  path parameter is the gateway **GUID `id`** (not the serial). `onet.py` builds the `SET_LIVE_SCENE`
-  packets; it is a clean-room port of the MIT-licensed ioBroker.oasecontrol codec (see `NOTICE`).
+- **Writes** — `POST /Gateway/{id}/SendONetPacket` relays a raw O-Net packet to the gateway (path
+  parameter is the gateway **GUID `id`**, not the serial):
+  - **Sockets & dimmer** — `SET_LIVE_SCENE`. `onet.py` is a clean-room port of the MIT-licensed
+    ioBroker.oasecontrol codec (see `NOTICE`).
+  - **RGB controllers** — `SET_LIVE_SCENE` **scene 5**, a 9-byte per-channel record (colour,
+    brightness, effect, speed, on/off); decoded from an app-traffic capture.
+  - **Pumps** — **RDM (ANSI E1.20)** tunnelled through O-Net (`rdm.py`): on/off, power, and
+    diagnostics (operating hours, firmware). Pump flow-control "shows" use a dedicated packet.
+- **Diagnostics** — device model name, firmware version, and operating hours over RDM.
 
 ## The `onet` codec (stdlib-only)
 
