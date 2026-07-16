@@ -23,14 +23,12 @@ jobs:
       - run: python -m pytest -q
 
   publish:
-    # Publishes to PyPI when a GitHub release is published. The tag must match the
-    # version in pyproject.toml (dependency-transparency: PyPI version == tagged release).
+    # Publishes to PyPI when a GitHub release is published, using the
+    # PYPI_API_TOKEN secret. The tag must match the version in pyproject.toml
+    # (dependency-transparency: PyPI version == tagged release).
     needs: test
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      id-token: write   # trusted publishing (OIDC), no API token needed
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -38,4 +36,9 @@ jobs:
           python-version: "3.12"
       - run: pip install build
       - run: python -m build
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          # Idempotent: a version already on PyPI is skipped, not an error.
+          skip-existing: true

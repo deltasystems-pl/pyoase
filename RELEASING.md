@@ -1,31 +1,25 @@
 # Releasing `pyoase`
 
-`pyoase` publishes to PyPI via **trusted publishing (OIDC)** — no API tokens. A GitHub
-release triggers `.github/workflows/ci.yml`'s `publish` job, which builds and uploads.
-
-## One-time PyPI setup (per project)
-
-Do this once, before the first release, at <https://pypi.org>:
-
-1. Sign in to PyPI → **Your projects** → **Publishing** (or **Account → Publishing** for a
-   *pending* publisher if the project does not exist yet).
-2. Add a **GitHub** trusted publisher with exactly:
-   - **PyPI project name:** `pyoase`
-   - **Owner:** `deltasystems-pl`
-   - **Repository:** `pyoase`
-   - **Workflow name:** `ci.yml`
-   - **Environment:** `pypi`
-3. In the GitHub repo, create an **Environment** named `pypi`
-   (Settings → Environments → New environment). No secrets are needed.
+`pyoase` publishes to PyPI automatically: publishing a GitHub **release** triggers
+`.github/workflows/ci.yml`'s `publish` job, which builds the sdist + wheel and uploads
+them with the `PYPI_API_TOKEN` repository secret (`skip-existing` makes it idempotent).
 
 ## Cutting a release
 
 1. Bump `version` in `pyproject.toml`, commit, push.
 2. Tag it: `git tag -a vX.Y.Z -m "pyoase X.Y.Z" && git push origin vX.Y.Z`.
    (The tag version must match `pyproject.toml`.)
-3. Create the GitHub release for that tag (a draft for `v0.1.0` already exists — just
-   **Publish** it). Publishing fires the `publish` job → PyPI.
+3. Create & **publish** the GitHub release for that tag — the `publish` job uploads to PyPI.
 4. Confirm at <https://pypi.org/project/pyoase/>.
+
+## Credentials
+
+- The workflow uses the **`PYPI_API_TOKEN`** repository secret
+  (Settings → Secrets and variables → Actions). Rotate it on PyPI as needed.
+- Prefer **trusted publishing (OIDC)** instead of a stored token when convenient: add a
+  GitHub trusted publisher on PyPI (project `pyoase`, owner `deltasystems-pl`, repo
+  `pyoase`, workflow `ci.yml`), then drop the `password:` line and give the job
+  `permissions: id-token: write`.
 
 > The Home Assistant integration [`ha-oase`](https://github.com/deltasystems-pl/ha-oase)
 > depends on `pyoase` from PyPI (`requirements` in its `manifest.json`). A fresh HACS
