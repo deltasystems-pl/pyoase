@@ -12,9 +12,13 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from . import onet
+from . import onet, rdm
 
 _LOGGER = logging.getLogger(__name__)
+
+#: The control parameters a cloud ``dmxPumpState`` block implies (see
+#: :attr:`Device.supported_pids`).
+_PUMP_CONTROL_PIDS: tuple[int, ...] = (rdm.Pid.DEVICE_ON, rdm.Pid.PUMP_POWER)
 
 
 def _increment_replies(d: dict, key: str) -> list[bytes]:
@@ -101,6 +105,17 @@ class PumpState:
         """True when a flow-control show is running (``fcStatus`` == DfcOn)."""
         return (self.fc_status or "").lower() == "dfcon"
 
+    @property
+    def has_flow_control(self) -> bool:
+        """True when the device reports Digital Flow Control ("show") state.
+
+        Only the fountain pumps run shows, and only for those does the cloud
+        publish ``fcStatus``. A filter pump such as an AquaMax answers the
+        control parameters but has no shows at all, and its state is assembled
+        from RDM reads with these two fields left unset.
+        """
+        return self.fc_status is not None
+
     @classmethod
     def from_dict(cls, wrapper: dict | None) -> PumpState | None:
         if not wrapper:
@@ -137,11 +152,27 @@ class Device:
     operating_hours: int | None = None
     #: Software/firmware version label, read over RDM.
     software_version: str | None = None
+    #: RDM parameter ids the device *declares* via SUPPORTED_PARAMETERS, read by
+    #: the coordinator. Descriptive only — the list is a lower bound.
+    declared_pids: tuple[int, ...] = ()
+    #: RDM parameter ids known to work on this device, because reading one
+    #: succeeded. Control entities are gated on these, never on ``declared_pids``.
+    supported_pids: tuple[int, ...] = ()
 
     @property
     def is_led(self) -> bool:
         """True for RGB/LED controllers (which expose ``led_channels``)."""
         return self.device_type.endswith("Led")
+
+    @property
+    def can_switch(self) -> bool:
+        """True when the device's own on/off state can be set over RDM."""
+        return rdm.Pid.DEVICE_ON in self.supported_pids
+
+    @property
+    def can_set_power(self) -> bool:
+        """True when the device's power level can be set over RDM."""
+        return rdm.Pid.PUMP_POWER in self.supported_pids
 
     @classmethod
     def from_dict(cls, d: dict, product_name: str | None = None) -> Device:
@@ -156,6 +187,12 @@ class Device:
             has_rdm=bool(d.get("rdmData")),
             custom_attributes=d.get("customAttributesJson"),
             product_name=product_name,
+            # A dmxPumpState block means the cloud has this device down as a
+            # pump, which has always implied both control parameters and is
+            # verified in the field. Seed from it so a pump that is off the bus
+            # when the integration starts still gets its controls; probing can
+            # only ever add to this, never take away.
+            supported_pids=_PUMP_CONTROL_PIDS if d.get("dmxPumpState") else (),
         )
 
 
