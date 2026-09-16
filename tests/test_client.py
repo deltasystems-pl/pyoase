@@ -11,6 +11,7 @@ import json
 import pathlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pyoase
 from pyoase.client import OaseCloudClient
 from pyoase.exceptions import OaseResponseError
 
@@ -57,3 +58,15 @@ def test_get_supported_parameters_is_empty_when_unanswered():
         OaseCloudClient, "async_rdm_get", AsyncMock(side_effect=OaseResponseError("nack"))
     ):
         assert asyncio.run(_client().async_get_supported_parameters("gw", 1)) == ()
+
+
+def test_version_is_in_step_with_the_package_metadata():
+    # These drifted once (0.1.0 vs 0.1.1) and nothing noticed; __version__ is
+    # what a bug report quotes, so it has to be the version that shipped.
+    pyproject = pathlib.Path(__file__).parents[1] / "pyproject.toml"
+    declared = next(
+        line.split('"')[1]
+        for line in pyproject.read_text().splitlines()
+        if line.startswith("version = ")
+    )
+    assert pyoase.__version__ == declared

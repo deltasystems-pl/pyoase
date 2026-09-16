@@ -25,7 +25,7 @@ from .exceptions import (
 )
 from .models import Device, Gateway, Inventory, PumpState, SocketsState, User
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
 if TYPE_CHECKING:
     from .auth import OaseAuth
