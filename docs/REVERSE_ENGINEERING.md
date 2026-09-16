@@ -486,7 +486,25 @@ controller). Reply `command_class` = request | `0x01` (GET→0x21, SET→0x31); 
 an RDM SET it stayed stale for **40 s+** (deviceOn frozen `true`, timestamp frozen) while the RDM GET
 showed the true new state immediately. ⇒ **read pump state via RDM GET, not from the inventory.** The
 HA coordinator overlays RDM `0x1010`/`0x8039` reads onto each poll for connected pumps
-(`_async_refresh_pump_states`); `fcMode`/`fcStatus` have no RDM equivalent and keep the cached values.
+(`_async_patch_pump`); `fcMode`/`fcStatus` have no RDM equivalent and keep the cached values.
+
+### ☠️ `dmxPumpState` is not a capability flag either (ha-oase#1, 2026-09-16)
+
+`dmxPumpState` carries the **Digital Flow Control** fields, and the cloud publishes the block only
+for pumps that *have* DFC — the fountain models. Two reporters with an **AquaMax 13000**
+(`F0C4_IM241_AQM_2025-03-13`) on an **EGC / Garden Controller Cloud** get no block at all, while the
+same pump answers `0x00C0` and `0x800D` perfectly well, so RDM reaches it end to end.
+
+⇒ **the absence of `dmxPumpState` says nothing about whether a device can be controlled.** Ask the
+device: GET `0x1010` and `0x8039` and see what ACKs. Only a *reply* from the device (a NACK, or a
+dropped request) writes a parameter off — a transport failure must not, or one bad minute of network
+costs a pump its entities until the next reload.
+
+**Probe by reading, never by writing** — see the ☠️ HAZARD notes above for what a blind SET cost us.
+
+Consequences for entity design: on/off and power are RDM and available to any pump that answers;
+**shows are not**. There is no RDM equivalent for `fcMode`/`fcStatus`, so a pump without the cloud
+block has no way to report show state and must not be offered a show selector.
 
 ### ⭐⭐ RGB write — SOLVED & shipped (2026-07-16, from an app capture)
 
