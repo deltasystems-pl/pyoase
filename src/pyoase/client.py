@@ -226,6 +226,27 @@ class OaseCloudClient:
 
     # ---- EGC device diagnostics (RDM) ----------------------------------------
 
+    async def async_get_supported_parameters(
+        self, gateway_id: str, device_number: int
+    ) -> tuple[int, ...]:
+        """Read the RDM parameters a device declares it supports (PID ``0x0050``).
+
+        Descriptive only. The list is a lower bound (see
+        :func:`~pyoase.rdm.parse_supported_parameters`), so it is the right
+        thing to put in a diagnostics download and the wrong thing to gate a
+        command on — verify a parameter by reading it. Returns an empty tuple
+        when the device does not answer.
+        """
+        try:
+            data = await self.async_rdm_get(
+                gateway_id,
+                rdm.Uid.for_device(device_number),
+                rdm.Pid.SUPPORTED_PARAMETERS,
+            )
+        except OaseError:
+            return ()
+        return rdm.parse_supported_parameters(data)
+
     async def async_get_operating_hours(
         self, gateway_id: str, device_number: int
     ) -> int | None:

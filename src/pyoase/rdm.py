@@ -40,6 +40,7 @@ __all__ = [
     "parse_frame",
     "discovery_packet_payload",
     "parse_discovery_reply",
+    "parse_supported_parameters",
     "percent_to_raw",
     "raw_to_percent",
 ]
@@ -253,6 +254,18 @@ def parse_discovery_reply(payload: bytes) -> list[EgcDevice]:
         article, device, manufacturer, subdevices = struct.unpack_from("<IIHH", payload, offset)
         devices.append(EgcDevice(article, device, manufacturer, subdevices))
     return devices
+
+
+def parse_supported_parameters(data: bytes) -> tuple[int, ...]:
+    """Decode a ``SUPPORTED_PARAMETERS`` (``0x0050``) reply into its PID list.
+
+    The parameter data is a packed array of big-endian 16-bit PIDs, kept in the
+    order the device listed them. E1.20 §10.4.1 has a device declare only the
+    parameters it is not already required to implement, so the list is a lower
+    bound: a PID's absence here is not evidence that the device lacks it.
+    """
+    count = len(data) // 2
+    return struct.unpack(f">{count}H", data[: count * 2]) if count else ()
 
 
 def percent_to_raw(percent: float) -> int:

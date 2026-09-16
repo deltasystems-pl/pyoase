@@ -392,3 +392,14 @@ def test_pump_show_packet_encoding():
     decoded = onet.parse_packet(pkt)
     assert decoded.packet_type == 0x5000
     assert decoded.payload == bytes([0, 0, 0, 0, 1, 5])
+
+
+def test_parse_supported_parameters_decodes_big_endian_pids():
+    data = bytes.fromhex("00500060008000c010108039")
+    assert rdm.parse_supported_parameters(data) == (0x0050, 0x0060, 0x0080, 0x00C0, 0x1010, 0x8039)
+
+
+def test_parse_supported_parameters_tolerates_empty_and_odd_replies():
+    assert rdm.parse_supported_parameters(b"") == ()
+    # A trailing odd byte is padding, not half a PID.
+    assert rdm.parse_supported_parameters(bytes.fromhex("10108039ff")) == (0x1010, 0x8039)

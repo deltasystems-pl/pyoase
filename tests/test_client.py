@@ -12,6 +12,7 @@ import pathlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from pyoase.client import OaseCloudClient
+from pyoase.exceptions import OaseResponseError
 
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "inventory.json"
 _INVENTORY_CALL = ("GET", "/User/Inventory")
@@ -42,3 +43,17 @@ def test_get_inventory_parses_the_same_request():
         *_INVENTORY_CALL, params={"onlyOwnedGateways": "false"}
     )
     assert inventory.gateways[0].gateway_type == "FmMasterWLanEgcCloudEsp"
+
+
+def test_get_supported_parameters_decodes_the_reply():
+    data = bytes.fromhex("10108039")
+    with patch.object(OaseCloudClient, "async_rdm_get", AsyncMock(return_value=data)):
+        pids = asyncio.run(_client().async_get_supported_parameters("gw", 111111111))
+    assert pids == (0x1010, 0x8039)
+
+
+def test_get_supported_parameters_is_empty_when_unanswered():
+    with patch.object(
+        OaseCloudClient, "async_rdm_get", AsyncMock(side_effect=OaseResponseError("nack"))
+    ):
+        assert asyncio.run(_client().async_get_supported_parameters("gw", 1)) == ()
