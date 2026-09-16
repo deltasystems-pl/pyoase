@@ -6,7 +6,8 @@ them with the `PYPI_API_TOKEN` repository secret (`skip-existing` makes it idemp
 
 ## Cutting a release
 
-1. Bump `version` in `pyproject.toml`, commit, push.
+1. Bump `version` in `pyproject.toml` **and `__version__` in `src/pyoase/__init__.py`**
+   — they must match; `test_version_is_in_step` fails if they drift. Commit, push.
 2. Tag it: `git tag -a vX.Y.Z -m "pyoase X.Y.Z" && git push origin vX.Y.Z`.
    (The tag version must match `pyproject.toml`.)
 3. Create & **publish** the GitHub release for that tag — the `publish` job uploads to PyPI.

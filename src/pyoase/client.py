@@ -33,10 +33,20 @@ class OaseCloudClient:
         self._auth = auth
 
     async def async_get_inventory(self) -> Inventory:
-        data = await self._request(
+        return Inventory.from_dict(await self.async_get_inventory_raw())
+
+    async def async_get_inventory_raw(self) -> dict[str, Any]:
+        """Fetch ``GET /User/Inventory`` as the raw JSON the cloud returned.
+
+        :class:`~pyoase.models.Inventory` deliberately drops what it has no use
+        for — notably each device's ``rdmData`` — but those are exactly the
+        fields needed to add support for hardware neither of us owns. The Home
+        Assistant diagnostics download includes this so a single attachment
+        answers "what does this device actually report?".
+        """
+        return await self._request(
             "GET", "/User/Inventory", params={"onlyOwnedGateways": "false"}
         )
-        return Inventory.from_dict(data)
 
     async def async_send_onet(self, gateway_id: str, packet: bytes) -> bytes:
         """Relay a raw O-Net packet to a gateway; return the gateway's reply bytes."""
@@ -215,6 +225,27 @@ class OaseCloudClient:
         return self._parse_set_reply(await self.async_send_onet(gateway_id, packet))
 
     # ---- EGC device diagnostics (RDM) ----------------------------------------
+
+    async def async_get_supported_parameters(
+        self, gateway_id: str, device_number: int
+    ) -> tuple[int, ...]:
+        """Read the RDM parameters a device declares it supports (PID ``0x0050``).
+
+        Descriptive only. The list is a lower bound (see
+        :func:`~pyoase.rdm.parse_supported_parameters`), so it is the right
+        thing to put in a diagnostics download and the wrong thing to gate a
+        command on — verify a parameter by reading it. Returns an empty tuple
+        when the device does not answer.
+        """
+        try:
+            data = await self.async_rdm_get(
+                gateway_id,
+                rdm.Uid.for_device(device_number),
+                rdm.Pid.SUPPORTED_PARAMETERS,
+            )
+        except OaseError:
+            return ()
+        return rdm.parse_supported_parameters(data)
 
     async def async_get_operating_hours(
         self, gateway_id: str, device_number: int

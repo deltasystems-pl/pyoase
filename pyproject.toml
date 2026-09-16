@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyoase"
-version = "0.1.1"
+version = "0.1.2"
 description = "Async client and O-Net protocol codec for OASE InScenio FM-Master (EGC / OASE Control) devices"
 readme = "README.md"
 requires-python = ">=3.11"
