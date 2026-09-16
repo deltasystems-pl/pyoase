@@ -33,10 +33,20 @@ class OaseCloudClient:
         self._auth = auth
 
     async def async_get_inventory(self) -> Inventory:
-        data = await self._request(
+        return Inventory.from_dict(await self.async_get_inventory_raw())
+
+    async def async_get_inventory_raw(self) -> dict[str, Any]:
+        """Fetch ``GET /User/Inventory`` as the raw JSON the cloud returned.
+
+        :class:`~pyoase.models.Inventory` deliberately drops what it has no use
+        for — notably each device's ``rdmData`` — but those are exactly the
+        fields needed to add support for hardware neither of us owns. The Home
+        Assistant diagnostics download includes this so a single attachment
+        answers "what does this device actually report?".
+        """
+        return await self._request(
             "GET", "/User/Inventory", params={"onlyOwnedGateways": "false"}
         )
-        return Inventory.from_dict(data)
 
     async def async_send_onet(self, gateway_id: str, packet: bytes) -> bytes:
         """Relay a raw O-Net packet to a gateway; return the gateway's reply bytes."""
